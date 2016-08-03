@@ -32,13 +32,13 @@ public class WikiSearchTest {
 		map1.put("Page1", 1);
 		map1.put("Page2", 2);
 		map1.put("Page3", 3);
-		search1 = new WikiSearch(map1);
+		search1 = new WikiSearch(map1, "search1");
 		
 		Map<String, Integer> map2 = new HashMap<String, Integer>();
 		map2.put("Page2", 4);
 		map2.put("Page3", 5);
 		map2.put("Page4", 7);
-		search2 = new WikiSearch(map2);
+		search2 = new WikiSearch(map2, "search2");
 	}
 
 	/**

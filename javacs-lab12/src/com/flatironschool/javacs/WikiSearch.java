@@ -20,14 +20,16 @@ public class WikiSearch {
 	
 	// map from URLs that contain the term(s) to relevance score
 	private Map<String, Integer> map;
+	private String original_term;
 
 	/**
 	 * Constructor.
 	 * 
 	 * @param map
 	 */
-	public WikiSearch(Map<String, Integer> map) {
+	public WikiSearch(Map<String, Integer> map, String term) {
 		this.map = map;
+		original_term = term;
 	}
 	
 	/**
@@ -52,6 +54,15 @@ public class WikiSearch {
 			System.out.println(entry);
 		}
 	}
+
+	/**
+	 * Retrieves the original term for the WikiSearch.
+	 * 
+	 * @return term.
+	 */
+	public String getTerm() {
+		return original_term;
+	}
 	
 	/**
 	 * Computes the union of two search results.
@@ -65,7 +76,7 @@ public class WikiSearch {
 			int relevance = totalRelevance(this.getRelevance(term), that.getRelevance(term));
 			union.put(term, relevance);
 		}
-		return new WikiSearch(union);
+		return new WikiSearch(union, original_term + " or " + that.getTerm());
 	}
 	
 	/**
@@ -78,11 +89,18 @@ public class WikiSearch {
 		Map<String, Integer> intersection = new HashMap<String, Integer>();
 		for (String term: map.keySet()) {
 			if (that.map.containsKey(term)) {
-				int relevance = totalRelevance(this.map.get(term), that.map.get(term));
+				int relevance;
+				if (original_term.indexOf(that.getTerm()) >= 0) { // term1 contains term2
+					relevance = this.map.get(term);
+				} else if (that.getTerm().indexOf(original_term) >= 0) { // term2 contains term1
+					relevance = that.map.get(term);
+				} else {
+					relevance = totalRelevance(this.map.get(term), that.map.get(term));
+				}
 				intersection.put(term, relevance);
 			}
 		}
-		return new WikiSearch(intersection);
+		return new WikiSearch(intersection, original_term + " and " + that.getTerm());
 	}
 	
 	/**
@@ -96,7 +114,7 @@ public class WikiSearch {
 		for (String term: that.map.keySet()) {
 			difference.remove(term);
 		}
-		return new WikiSearch(difference);
+		return new WikiSearch(difference, original_term + " minus " + that.getTerm());
 	}
 	
 	/**
@@ -145,12 +163,13 @@ public class WikiSearch {
 	 * @param index
 	 * @return
 	 */
-	public static WikiSearch search(String term, JedisIndex index) {
+	public WikiSearch search(String term, JedisIndex index) {
+		original_term = term;
 		Map<String, Integer> map = index.getCounts(term);
-		return new WikiSearch(map);
+		return new WikiSearch(map, term);
 	}
 
-	public static void main(String[] args) throws IOException {
+	public void main(String[] args) throws IOException {
 		
 		// make a JedisIndex
 		Jedis jedis = JedisMaker.make();
