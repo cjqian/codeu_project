@@ -97,6 +97,47 @@ public class JedisIndex {
 		return map;
 	}
 
+	public Map<String, Double> getTfIdf(String term) {
+		Map<String, Double> map = new HashMap<String, Double>();
+		List<String> urls = new ArrayList<String>();
+		urls.addAll(getURLs(term));	
+		long totalDocuments = urlSetKeys().size();
+		long docsWithTerm = urls.size();
+		Transaction t = jedis.multi();
+		for (String url: urls) {
+			String redisKey = termCounterKey(url);
+			t.hgetAll(redisKey);
+			
+		}
+		List<Object> res = t.exec();
+		int i = 0;
+		for (String url: urls) {
+			HashMap<String, String> tc = (HashMap<String, String>) res.get(i++);
+			double result = getTfIdf(tc, term, totalDocuments, docsWithTerm);
+			map.put(url, result);
+		}
+		return map;
+	}
+
+
+	public double getTfIdf(HashMap<String,String> map, String term, long totalDocuments, long docsWithTerm) {
+		float termCount = 0;
+		float totalCount = 0;
+		for (Entry<String, String> entry: map.entrySet()) {
+			if(entry.getKey() != null && !entry.getKey().isEmpty()) {
+				int value = Integer.parseInt(entry.getValue());
+				if (entry.getKey().equals(term)) {
+					termCount += value;
+				}
+				totalCount += value;
+			}
+		}
+
+		float tf = termCount /totalCount;
+		double idf = Math.log(totalDocuments/docsWithTerm);
+		return tf*idf;
+	}
+
 	/**
 	 * Looks up a term and returns a map from URL to count.
 	 * 
