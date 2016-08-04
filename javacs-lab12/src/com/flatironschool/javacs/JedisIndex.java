@@ -97,6 +97,37 @@ public class JedisIndex {
 		return map;
 	}
 
+	/**
+	 * Looks up a term and returns a map from URL to count.
+	 * 
+	 * @param term
+	 * @return Map from URL to count.
+	 */
+	public Map<String, Integer> getCountsFaster(String term) {
+		// convert the set of strings to a list so we get the
+		// same traversal order every time
+		List<String> urls = new ArrayList<String>();
+		urls.addAll(getURLs(term));
+
+		// construct a transaction to perform all lookups
+		Transaction t = jedis.multi();
+		for (String url: urls) {
+			String redisKey = termCounterKey(url);
+			t.hget(redisKey, term);
+		}
+		List<Object> res = t.exec();
+
+		// iterate the results and make the map
+		Map<String, Integer> map = new HashMap<String, Integer>();
+		int i = 0;
+		for (String url: urls) {
+			System.out.println(url);
+			Integer count = new Integer((String) res.get(i++));
+			map.put(url, count);
+		}
+		return map;
+	}
+
 	public Map<String, Double> getTfIdf(String term) {
 		Map<String, Double> map = new HashMap<String, Double>();
 		List<String> urls = new ArrayList<String>();
@@ -136,37 +167,6 @@ public class JedisIndex {
 		float tf = termCount /totalCount;
 		double idf = Math.log(totalDocuments/docsWithTerm);
 		return tf*idf;
-	}
-
-	/**
-	 * Looks up a term and returns a map from URL to count.
-	 * 
-	 * @param term
-	 * @return Map from URL to count.
-	 */
-	public Map<String, Integer> getCountsFaster(String term) {
-		// convert the set of strings to a list so we get the
-		// same traversal order every time
-		List<String> urls = new ArrayList<String>();
-		urls.addAll(getURLs(term));
-
-		// construct a transaction to perform all lookups
-		Transaction t = jedis.multi();
-		for (String url: urls) {
-			String redisKey = termCounterKey(url);
-			t.hget(redisKey, term);
-		}
-		List<Object> res = t.exec();
-
-		// iterate the results and make the map
-		Map<String, Integer> map = new HashMap<String, Integer>();
-		int i = 0;
-		for (String url: urls) {
-			System.out.println(url);
-			Integer count = new Integer((String) res.get(i++));
-			map.put(url, count);
-		}
-		return map;
 	}
 
 	/**

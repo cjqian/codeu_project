@@ -1,9 +1,12 @@
 package com.flatironschool.javacs;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.ArrayList;
 
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
@@ -20,6 +23,11 @@ public class TermCounter {
 	
 	private Map<String, Integer> map;
 	private String label;
+
+	// words to ignore in index because they are too common
+	private String[] stopWords = {"a", "an", "and", "are", "as", "at", "be", "by",
+	"for", "from", "has", "he", "in", "is", "it", "its", "of", "on", "or", "that", "the",
+	"to", "was", "were", "will", "with", ""};
 	
 	public TermCounter(String label) {
 		this.label = label;
@@ -80,8 +88,28 @@ public class TermCounter {
 		
 		for (int i=0; i<array.length; i++) {
 			String term = array[i];
-			incrementTermCount(term);
+
+			// to save time and space, avoid indexing very common words because they don't
+			// help identify relevant pages
+			if (!isStopWord(term)) {
+				incrementTermCount(term);
+			}
 		}
+	}
+
+	/**
+	 * Helper function for processText
+	 * determines whether a word is a 'stop' word, meaning it should not be included in the index
+	 * 
+	 * @param text  The word to process.
+	 */
+	public boolean isStopWord(String word) {
+		for (String stopWord : stopWords) {
+			if (word.equalsIgnoreCase(stopWord)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -128,7 +156,16 @@ public class TermCounter {
 	 * Print the terms and their counts in arbitrary order.
 	 */
 	public void printCounts() {
-		for (String key: keySet()) {
+
+		ArrayList<String> sortedKeys = new ArrayList<String>(keySet());
+		Collections.sort(sortedKeys, new Comparator<String>() {
+		    @Override
+		    public int compare(String s1, String s2) {
+		        return get(s1).compareTo(get(s2));
+		    }
+		});
+
+		for (String key: sortedKeys) {
 			Integer count = get(key);
 			System.out.println(key + ", " + count);
 		}
