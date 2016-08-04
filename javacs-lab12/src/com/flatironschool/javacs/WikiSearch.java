@@ -21,13 +21,17 @@ public class WikiSearch {
 	// map from URLs that contain the term(s) to relevance score
 	private Map<String, Double> map;
 
+	private String original_term;
+
 	/**
 	 * Constructor.
 	 * 
 	 * @param map
 	 */
-	public WikiSearch(Map<String, Double> map) {
+
+	public WikiSearch(Map<String, Double> map, String term) {
 		this.map = map;
+		original_term = term;
 	}
 	
 	/**
@@ -52,6 +56,15 @@ public class WikiSearch {
 			System.out.println(entry);
 		}
 	}
+
+	/**
+	 * Retrieves the original term for the WikiSearch.
+	 * 
+	 * @return term.
+	 */
+	public String getTerm() {
+		return original_term;
+	}
 	
 	/**
 	 * Computes the union of two search results.
@@ -65,7 +78,7 @@ public class WikiSearch {
 			double relevance = totalRelevance(this.getRelevance(term), that.getRelevance(term));
 			union.put(term, relevance);
 		}
-		return new WikiSearch(union);
+		return new WikiSearch(union, original_term + " or " + that.getTerm());
 	}
 	
 	/**
@@ -79,10 +92,18 @@ public class WikiSearch {
 		for (String term: map.keySet()) {
 			if (that.map.containsKey(term)) {
 				double relevance = totalRelevance(this.map.get(term), that.map.get(term));
+
+				if (original_term.indexOf(that.getTerm()) >= 0) { // term1 contains term2
+					relevance = this.map.get(term);
+				} else if (that.getTerm().indexOf(original_term) >= 0) { // term2 contains term1
+					relevance = that.map.get(term);
+				} else {
+					relevance = totalRelevance(this.map.get(term), that.map.get(term));
+				}
 				intersection.put(term, relevance);
 			}
 		}
-		return new WikiSearch(intersection);
+		return new WikiSearch(intersection, original_term + " and " + that.getTerm());
 	}
 	
 	/**
@@ -96,7 +117,7 @@ public class WikiSearch {
 		for (String term: that.map.keySet()) {
 			difference.remove(term);
 		}
-		return new WikiSearch(difference);
+		return new WikiSearch(difference, original_term + " minus " + that.getTerm());
 	}
 	
 	/**
@@ -144,12 +165,14 @@ public class WikiSearch {
 	 * @param index
 	 * @return
 	 */
-	public static WikiSearch search(String term, JedisIndex index) {
-		Map<String, Double> map = index.getTfIdf(term);
-		return new WikiSearch(map);
-	}
 
-	public static void main(String[] args) throws IOException {
+	public WikiSearch search(String term, JedisIndex index) {
+        original_term = term;
+        Map<String, Double> map = index.getTfIdf(term);
+        return new WikiSearch(map, term);
+    }
+
+	public void main(String[] args) throws IOException {
 		
 		// make a JedisIndex
 		Jedis jedis = JedisMaker.make();

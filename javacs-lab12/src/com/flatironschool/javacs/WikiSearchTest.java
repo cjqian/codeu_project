@@ -32,13 +32,14 @@ public class WikiSearchTest {
 		map1.put("Page1", 1.0);
 		map1.put("Page2", 2.0);
 		map1.put("Page3", 3.0);
-		search1 = new WikiSearch(map1);
+		search1 = new WikiSearch(map1, "search1");
 		
 		Map<String, Double> map2 = new HashMap<String, Double>();
 		map2.put("Page2", 4.0);
 		map2.put("Page3", 5.0);
 		map2.put("Page4", 7.0);
-		search2 = new WikiSearch(map2);
+		search2 = new WikiSearch(map2, "search2");
+
 	}
 
 	/**
@@ -86,8 +87,8 @@ public class WikiSearchTest {
 	@Test
 	public void testSort() {
 		List<Entry<String, Double>> list = search2.sort();
-		assertThat(list.get(0).getValue(), is(4.0));
+		assertThat(list.get(2).getValue(), is(4.0));
 		assertThat(list.get(1).getValue(), is(5.0));
-		assertThat(list.get(2).getValue(), is(7.0));
+		assertThat(list.get(0).getValue(), is(7.0));
 	}
 }
