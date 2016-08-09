@@ -62,8 +62,8 @@ public class WikiSearchTest {
 	public void testAnd() {
 		WikiSearch search = search1.and(search2);
 		assertThat(search.getRelevance("Page1"), is(0.0));
-		assertThat(search.getRelevance("Page2"), is(6.0));
-		assertThat(search.getRelevance("Page3"), is(8.0));
+		assertThat(search.getRelevance("Page2"), is(2.0));
+		assertThat(search.getRelevance("Page3"), is(3.0));
 		assertThat(search.getRelevance("Page4"), is(0.0));
 		assertThat(search.getRelevance("Page5"), is(0.0));
 	}

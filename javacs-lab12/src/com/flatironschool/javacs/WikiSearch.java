@@ -21,7 +21,7 @@ public class WikiSearch {
 	// map from URLs that contain the term(s) to relevance score
 	private Map<String, Double> map;
 
-	private String original_term;
+	private static String original_term;
 
 	/**
 	 * Constructor.
@@ -166,13 +166,13 @@ public class WikiSearch {
 	 * @return
 	 */
 
-	public WikiSearch search(String term, JedisIndex index) {
+	public static WikiSearch search(String term, JedisIndex index) {
         original_term = term;
         Map<String, Double> map = index.getTfIdf(term);
         return new WikiSearch(map, term);
     }
 
-	public void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException {
 		
 		// make a JedisIndex
 		Jedis jedis = JedisMaker.make();
