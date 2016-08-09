@@ -52,8 +52,15 @@ public class WikiSearch {
 	 */
 	private  void print() {
 		List<Entry<String, Double>> entries = sort();
-		for (Entry<String, Double> entry: entries) {
-			System.out.println(entry);
+		for (int i = 0; i < entries.size(); i++) {
+
+			Entry<String, Double> entry = entries.get(i);
+
+			// just print out name of wikipedia page, ignore URL prefix
+			String url = entry.getKey();
+			String wikiTitle = url.substring(30,url.length());
+			String relevance = String.format("%.3f", entry.getValue());
+			System.out.println(i + ". " + wikiTitle + ": " + relevance);
 		}
 	}
 
@@ -182,22 +189,33 @@ public class WikiSearch {
 		
 		// search for the first term
 		String term1 = "java";
-		System.out.println("Query: " + term1);
+		System.out.println("Results for query: " + term1);
 
 		Map<String, Double> map1 = index.getTfIdf(term1);
 		WikiSearch search1 = new WikiSearch(map1, term1);
 		search1.print();
+		System.out.println();
 		
 		// search for the second term
 		String term2 = "programming";
-		System.out.println("Query: " + term2);
+		System.out.println("Results for query: " + term2);
 		Map<String, Double> map2 = index.getTfIdf(term2);
 		WikiSearch search2 = new WikiSearch(map2, term2);
 		search2.print();
+		System.out.println();
+
+		// search for the third term
+		String term3 = "language";
+		System.out.println("Results for query: " + term3);
+		Map<String, Double> map3 = index.getTfIdf(term3);
+		WikiSearch search3 = new WikiSearch(map3, term3);
+		search3.print();
+		System.out.println();
 
 		// compute the intersection of the searches
-		System.out.println("Query: " + term1 + " AND " + term2);
+		System.out.println("Results for query: " + term1 + " AND " + term2);
 		WikiSearch intersection = search1.and(search2);
 		intersection.print();
+		System.out.println();
 	}
 }
