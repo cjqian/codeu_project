@@ -89,9 +89,12 @@ public class WikiSearch {
 	 */
 	public WikiSearch and(WikiSearch that) {
 		Map<String, Double> intersection = new HashMap<String, Double>();
+		System.out.println(that.map.keySet().toString());
+		System.out.println(map.keySet().toString());
 		for (String term: map.keySet()) {
 			if (that.map.containsKey(term)) {
-				double relevance = totalRelevance(this.map.get(term), that.map.get(term));
+
+				double relevance;
 
 				if (original_term.indexOf(that.getTerm()) >= 0) { // term1 contains term2
 					relevance = this.map.get(term);
@@ -166,13 +169,12 @@ public class WikiSearch {
 	 * @return
 	 */
 
-	public WikiSearch search(String term, JedisIndex index) {
-        original_term = term;
+	public static WikiSearch search(String term, JedisIndex index) {
         Map<String, Double> map = index.getTfIdf(term);
         return new WikiSearch(map, term);
     }
 
-	public void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException {
 		
 		// make a JedisIndex
 		Jedis jedis = JedisMaker.make();
@@ -181,15 +183,18 @@ public class WikiSearch {
 		// search for the first term
 		String term1 = "java";
 		System.out.println("Query: " + term1);
-		WikiSearch search1 = search(term1, index);
+
+		Map<String, Double> map1 = index.getTfIdf(term1);
+		WikiSearch search1 = new WikiSearch(map1, term1);
 		search1.print();
 		
 		// search for the second term
 		String term2 = "programming";
 		System.out.println("Query: " + term2);
-		WikiSearch search2 = search(term2, index);
+		Map<String, Double> map2 = index.getTfIdf(term2);
+		WikiSearch search2 = new WikiSearch(map2, term2);
 		search2.print();
-		
+
 		// compute the intersection of the searches
 		System.out.println("Query: " + term1 + " AND " + term2);
 		WikiSearch intersection = search1.and(search2);
