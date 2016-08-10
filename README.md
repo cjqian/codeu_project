@@ -11,6 +11,8 @@ $ ant build
 $ ant QueryHandler -Dquery="[query]"
 ```
 
+Make sure that you're using `-Dquery` and not `DQuery`! The `build.xml` is case-sensitive.
+
 ### Query Syntax
 Queries are read in [CNF](https://en.wikipedia.org/wiki/Conjunctive_normal_form) (conjunctive normal form), with the following requirements:
 
