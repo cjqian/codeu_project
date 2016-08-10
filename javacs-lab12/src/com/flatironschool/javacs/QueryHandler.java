@@ -14,7 +14,7 @@ public class QueryHandler{
 	private JedisIndex _jedisIndex;
 	private String _query;
 
-	private List<Entry<String, Integer>> _results;
+	private List<Entry<String, Double>> _results;
 
 	// Handles queries entered in CNF.
 	// Example: java QueryHandler '( dog AND cat ) OR ( zoo ) "
@@ -166,7 +166,7 @@ public class QueryHandler{
 	}
 
 	public void printResults(){
-		for (Entry<String, Integer> entry: _results) {
+		for (Entry<String, Double> entry: _results) {
 			System.out.println(entry);
 		}
 	}

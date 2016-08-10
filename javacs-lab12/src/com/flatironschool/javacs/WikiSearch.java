@@ -51,8 +51,8 @@ public class WikiSearch {
 	 * @param map
 	 */
 	public void print() {
-		List<Entry<String, Integer>> entries = sort();
-		for (Entry<String, Integer> entry: entries) {
+		List<Entry<String, Double>> entries = sort();
+		for (int i = 0; i < entries.size(); i++) {
 			Entry<String, Double> entry = entries.get(i);
 
 			// just print out name of wikipedia page, ignore URL prefix
