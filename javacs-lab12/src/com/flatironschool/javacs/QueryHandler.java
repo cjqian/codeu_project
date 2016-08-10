@@ -7,6 +7,7 @@ import java.util.Scanner;
 import java.util.Map.Entry;
 import java.util.List;
 import redis.clients.jedis.Jedis;
+import java.util.Map;
 
 public class QueryHandler{
 	private static final int WORD_STATE = 0;
@@ -15,14 +16,14 @@ public class QueryHandler{
 	private String _query;
 
 	private List<Entry<String, Double>> _results;
-
+	private Scanner _scanner;
 	// Handles queries entered in CNF.
 	// Example: java QueryHandler '( dog AND cat ) OR ( zoo ) "
 	public QueryHandler(String[] args) throws Exception{
 		if (args.length != 1){
 			throw new Exception("Invalid query length. Please enter 1 query in CNF form.");
 		}
-
+		_scanner = new Scanner(System.in);
 		// Makes jedis index.
 		Jedis jedis = JedisMaker.make();
 		_jedisIndex = new JedisIndex(jedis);
@@ -31,8 +32,11 @@ public class QueryHandler{
 		String query = args[0];
 		ArrayList<ArrayList<String>> tokens = parse(query);
 		WikiSearch searchResult = orLists(tokens);
-		_results = searchResult.sort();
 
+		// Prints the result menu.
+		searchResult.print();
+
+		_results = searchResult.sort();
 	}
 
 	// NOTE: Currently does not support multi-word queries. 
@@ -112,22 +116,6 @@ public class QueryHandler{
 
 	}
 
-	private void printLists(ArrayList<ArrayList<String>> queries){
-		for (int i = 0; i < queries.size(); i++){
-			System.out.println("List " + i + ":");
-
-			ArrayList<String> curList = queries.get(i);
-
-			printList(curList);
-
-		}
-	}
-	private void printList(ArrayList<String> queries){
-		for (int i = 0; i < queries.size(); i++){
-			System.out.println(queries.get(i));
-		}
-	}
-
 	// Performs the search.
 	private WikiSearch orLists(ArrayList<ArrayList<String>> queries) throws Exception{
 		if (queries.size() <= 0){
@@ -137,7 +125,6 @@ public class QueryHandler{
 		// Search the initial list.
 		ArrayList<String> curList = queries.get(0);
 		WikiSearch result = andList(curList);
-		result.print();
 
 		for (int i = 1; i < queries.size(); i++){
 			ArrayList<String> curQuery = queries.get(i);
@@ -154,20 +141,35 @@ public class QueryHandler{
 		}
 
 		String curQuery = queries.get(0);
-		WikiSearch result = WikiSearch.search(curQuery, _jedisIndex);
+
+		WikiSearch result = search(curQuery);
 		for (int i = 1; i < queries.size(); i++){
 			curQuery = queries.get(i);
-			WikiSearch curResult = WikiSearch.search(curQuery, _jedisIndex);
+			WikiSearch curResult = search(curQuery);
+
 			result = result.and(curResult);
-			curResult.print();
 		}
 
 		return result;
 	}
 
-	public void printResults(){
-		for (Entry<String, Double> entry: _results) {
-			System.out.println(entry);
+	private WikiSearch search(String term){
+		Map<String, Double> map = _jedisIndex.getTfIdf(term);
+		WikiSearch result = new WikiSearch(map, term);
+
+		return result;
+	}
+
+	public void runLauncher() throws Exception{
+		while (true){
+			System.out.println("Enter the number of the page you'd like to access, or press [Ctrl]/[Cmd]-C to quit.");
+			int value = _scanner.nextInt();
+			if (value < 0 || value > _results.size()){
+				throw new Exception("Out of bounds.");
+			}
+
+			String url = _results.get(value).getKey();
+			Desktop.getDesktop().browse(new URI(url));
 		}
 	}
 
@@ -175,8 +177,7 @@ public class QueryHandler{
 	 */
 	public static void main(String[] args) throws Exception{
 		// Handles query, prints results, and opens quick access goto.
-
 		QueryHandler queryHandler = new QueryHandler(args);
-		queryHandler.printResults();
+		queryHandler.runLauncher();
 	}
 }

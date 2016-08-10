@@ -95,8 +95,6 @@ public class WikiSearch {
 	 */
 	public WikiSearch and(WikiSearch that) {
 		Map<String, Double> intersection = new HashMap<String, Double>();
-		System.out.println(that.map.keySet().toString());
-		System.out.println(map.keySet().toString());
 		for (String term: map.keySet()) {
 			if (that.map.containsKey(term)) {
 
