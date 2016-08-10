@@ -294,6 +294,14 @@
             <classpath refid="JavaCS.classpath"/>
         </java>
     </target>
+
+    <target name="QueryHandler">
+        <java classname="com.flatironschool.javacs.QueryHandler" failonerror="true" fork="yes">
+            <classpath refid="JavaCS.classpath"/>
+	    <arg value="${query}"/>
+        </java>
+    </target>
+
     <target name="TermCounter">
         <java classname="com.flatironschool.javacs.TermCounter" failonerror="true" fork="yes">
             <classpath refid="JavaCS.classpath"/>

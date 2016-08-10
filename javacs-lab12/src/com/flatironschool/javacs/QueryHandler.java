@@ -2,25 +2,23 @@ package com.flatironschool.javacs;
 
 import java.awt.Desktop;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Scanner;
-
+import java.util.Map.Entry;
+import java.util.List;
 import redis.clients.jedis.Jedis;
 
 public class QueryHandler{
-	private	int OP_STATE = 0; // open parenthesis state
-	private	int CP_STATE = 1; // closed parenthesis state
-	private	int AND_STATE = 2;	// and state
-	private	int OR_STATE = 3;	// or state
-	private	int WORD_STATE = 4; // in state
-
+	private static final int WORD_STATE = 0;
+	private static final int CP_STATE = 1;
 	private JedisIndex _jedisIndex;
 	private String _query;
 
-	private List<Entry<String, Double>> _results;
+	private List<Entry<String, Integer>> _results;
 
 	// Handles queries entered in CNF.
 	// Example: java QueryHandler '( dog AND cat ) OR ( zoo ) "
-	public QueryHandler(String[] args){
+	public QueryHandler(String[] args) throws Exception{
 		if (args.length != 1){
 			throw new Exception("Invalid query length. Please enter 1 query in CNF form.");
 		}
@@ -31,7 +29,7 @@ public class QueryHandler{
 
 		// Parses query and stores result.
 		String query = args[0];
-		List<List<String>> tokens = parseQuery(query);
+		ArrayList<ArrayList<String>> tokens = parse(query);
 		WikiSearch searchResult = orLists(tokens);
 		_results = searchResult.sort();
 
@@ -41,87 +39,108 @@ public class QueryHandler{
 
 	// Parses the query and returns a list of list of strings, where each list of strings 
 	// is a list of AND clauses, and each instance in the larger list is to be OR'd with the remainder.
-	private List<List<String>> parse(String query){
+	private ArrayList<ArrayList<String>> parse(String query) throws Exception{
 		String[] tokens = query.split("\\s+");
 
-		// Special case: only one query.
-		if (tokens.Length == 1){
-			List<List<String>> result = new List<List<String>>();
-			List<String> oneResult = new List<String>();
+			// Special case: only one query.
+
+		if (tokens.length == 1){
+			ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
+			ArrayList<String> oneResult = new ArrayList<String>();
 			oneResult.add(tokens[0]);
 			result.add(oneResult);
 
 			return result;
 		}
-	
+
 		// Else, make sure the query has the correct format and enter DFA.
-		if (tokens[0] != "(") throw new Exception("Invalid token format.");
+		if (!tokens[0].equals("(")) throw new Exception("Invalid token format.");
 
-		List<List<String>> result = new List<List<String>>();
+		ArrayList<ArrayList<String>> results = new ArrayList<ArrayList<String>>();
 
-		int i = 0;
-		List<String> curList = new List<String>();
+		int i = 1;
+		ArrayList<String> curList = new ArrayList<String>();
 		int curState = WORD_STATE; // Initial state.
 
 		// OK since and/or are stopwords.
-		while (i < tokens.Length()){
+		while (i < tokens.length){
 			String curToken = tokens[i];
 
 			switch (curState){
 				case CP_STATE:
-					results.Add(curList);
-					curList = new List<String>();
+					results.add(curList);
 
-					if (peek(tokens, i).equals("OR") &&
-						peek(tokens, i + 1).equals("(")){
+					i = i + 1;
+					if (i == tokens.length) break;
+
+					curList = new ArrayList<String>();
+
+					if (peek(tokens, i).toUpperCase().equals("OR") &&
+							peek(tokens, i + 1).equals("(")){
+						i = i + 2;
 						curState = WORD_STATE;
-					} else if (i != tokens.Length - 1) {
+					} else {
 						throw new Exception("Invalid token format.");
 					}
 
 					break;
+
 				case WORD_STATE:
-					curList.Add(curToken);
+					curList.add(curToken);
 
 					// Peek.
-					String peekToken = peek(tokens, i);
-					if (peekToken.equals("AND")){
+					String peekToken = peek(tokens, i + 1);
+					if (peekToken.toUpperCase().equals("AND")){
+						i = i + 2;
 						curState = WORD_STATE;
 					} else if (peekToken.equals(")")){
+						i = i + 1;
 						curState = CP_STATE;
 					} else {
 						throw new Exception("Invalid token format.");
 					}
 					break;
-
-				default:
-					throw new Exception("Unhandled error. Shit.");
-					break;
 			}
-
-			i++;
 		}
 
+		return results;
 	}
 
 	private String peek(String[] tokens, int i){
-		if (i < 0 || i >= tokens.Length() - 1) return "";
+		if (i < 0 || i >= tokens.length) return "";
 		return tokens[i];
 
 	}
 
+	private void printLists(ArrayList<ArrayList<String>> queries){
+		for (int i = 0; i < queries.size(); i++){
+			System.out.println("List " + i + ":");
+
+			ArrayList<String> curList = queries.get(i);
+
+			printList(curList);
+
+		}
+	}
+	private void printList(ArrayList<String> queries){
+		for (int i = 0; i < queries.size(); i++){
+			System.out.println(queries.get(i));
+		}
+	}
+
 	// Performs the search.
-	private WikiSearch orLists(List<List<String>> queries){
-		if (queries.length <= 0){
+	private WikiSearch orLists(ArrayList<ArrayList<String>> queries) throws Exception{
+		if (queries.size() <= 0){
 			throw new Exception("No valid query detected.");
 		}
 
 		// Search the initial list.
-		List<String> curList = queries.Get(0);
+		ArrayList<String> curList = queries.get(0);
 		WikiSearch result = andList(curList);
+		result.print();
 
-		for (int i = 1; i < queries.Size(); i++){
-			curQuery = queries.Get(i);
+		for (int i = 1; i < queries.size(); i++){
+			ArrayList<String> curQuery = queries.get(i);
 			WikiSearch curResult = andList(curQuery);
 			result = result.or(curResult);
 		}
@@ -129,49 +148,35 @@ public class QueryHandler{
 		return result;
 	}
 
-	private WikiSearch andList(List<String> queries){
-		if (queries.Length <= 0){
+	private WikiSearch andList(ArrayList<String> queries){
+		if (queries.size() <= 0){
 			return null;
 		}
 
-		String curQuery = queries.Get(0);
+		String curQuery = queries.get(0);
 		WikiSearch result = WikiSearch.search(curQuery, _jedisIndex);
-		for (int i = 1; i < queries.Size(); i++){
-			curQuery = queries.Get(i);
+		for (int i = 1; i < queries.size(); i++){
+			curQuery = queries.get(i);
 			WikiSearch curResult = WikiSearch.search(curQuery, _jedisIndex);
 			result = result.and(curResult);
+			curResult.print();
 		}
 
 		return result;
 	}
 
 	public void printResults(){
-		for (Entry<String, Double> entry: _results) {
+		for (Entry<String, Integer> entry: _results) {
 			System.out.println(entry);
 		}
 	}
 
 	/* Usage:
 	 */
-	public static void main(String[] args){
+	public static void main(String[] args) throws Exception{
 		// Handles query, prints results, and opens quick access goto.
+
 		QueryHandler queryHandler = new QueryHandler(args);
 		queryHandler.printResults();
 	}
-	
-	/*
-	// Prints out a list, numerically. 
-	private void DisplayResults(){
-		_results.print();
-
-		// Prompt.
-		System.out.println("Press [i] to open the [i]th entry. Or, press ctrl-C to exit.");
-
-		// Get keypress. This runs in an infinite loop.
-		while (true){
-			if (Integer.parseInt(System.console().readLine()) < results.Length()){
-				Desktop.getDesktop().browse(new URI(results.get(i)));
-			}		
-		}
-	}*/
 }
