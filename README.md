@@ -36,6 +36,7 @@ java AND programming    [3]
 (java OR programming)   [4]
 ```
 Why?
+
 1. The "AND" token is not used to separate terms.
 2. The open/closed parentheses are not separated by spaces.
 3. No parentheses are used in a multi-term query.
@@ -44,6 +45,7 @@ Why?
 
 ## Future Steps
 For the interface specifically, we hope to eventually do the following:
+
 1. Implement a more sophisticated DFA token parser so there are less requirements on the syntax of input parameters.
 2. Allow flags (for example, `--show-urls` or `--disable-browser`) that control program execution.
 3. Design a way for multiple queries to be handled without exiting the program.
